@@ -2,7 +2,8 @@ import requests
 import numpy as np
 import cv2
 
-url = 'http://192.168.1.3:5000/data_img'
+ip = 'http://192.168.1.5:5000'
+url = ip+'/data_img'
 
 while True:
 

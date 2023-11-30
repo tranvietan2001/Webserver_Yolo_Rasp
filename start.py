@@ -4,8 +4,10 @@ import cv2
 
 from ultralytics import YOLO
 
-url = "http://192.168.1.5:5000/status"
-url_img = "http://192.168.1.5:5000/data_img"
+
+ip = "http://192.168.1.7:5000"
+url = ip+"/status"
+url_img = ip+"/data_img"
 
 model = YOLO('yolov5nu.pt')
 
@@ -80,7 +82,7 @@ while True:
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
                 
-                cv2.waitKey(0)
+                #cv2.waitKey(0)
                 cv2.destroyAllWindows()
 
             else:
