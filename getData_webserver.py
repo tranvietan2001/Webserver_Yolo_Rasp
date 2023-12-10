@@ -2,7 +2,7 @@ import requests
 
 # url = "http://192.168.1.11/data"
 
-url = "http://192.168.1.7:5000/data_control"
+url = "http://192.168.1.7:5000/status"
 
 while True:
  

@@ -15,7 +15,7 @@ while True:
     try:
         response = requests.get(url)
         if response.status_code == 200:
-            data = response.text
+            data = response.tex
             print("Data received:", data)
 
             if data == 'S':
