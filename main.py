@@ -1,27 +1,50 @@
-import requests
-import numpy as np
 import cv2
-from ultralytics import YOLO
+import numpy as np
 
-ip = "http://192.168.1.7:5000"
-url_status = ip+"/status"
-url_img = ip+"/data_img"
+# Tạo bộ lọc Kalman
+kalman = cv2.KalmanFilter(4, 2)
+kalman.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], np.float32)
+kalman.transitionMatrix = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32)
 
-model = YOLO('yolov5nu.pt')
+# Khởi tạo biến lưu trữ vị trí hiện tại của đối tượng
+current_measurement = np.array((2, 1), np.float32)
+current_prediction = np.zeros((2, 1), np.float32)
+
+# Đọc video
+cap = cv2.VideoCapture(0)
 
 while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-    resp_img = requests.get(url_img)
-    # resp_status = requests.get(url_status)
-       
-    if resp_img.status_code == 200 :
-        image_array = np.asarray(bytearray(resp_img.content), dtype=np.uint8)
-        frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    # Thực hiện YOLO detection để xác định vị trí của đối tượng
+    # (giả sử được lưu trong biến `object_position` dạng (x, y))
 
-        cv2.imshow("W", frame)    
+    # Cập nhật bộ lọc Kalman
+    kalman.correct(current_measurement)
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+    # Dự đoán vị trí tiếp theo của đối tượng
+    current_prediction = kalman.predict()
 
-    else:
-        print("Error IMG:", resp_img.status_code)
+    # Cập nhật vị trí hiện tại của đối tượng
+    current_measurement[0] = object_position[0]
+    current_measurement[1] = object_position[1]
+
+    # Vẽ vị trí dự đoán của đối tượng
+    predicted_x = int(current_prediction[0])
+    predicted_y = int(current_prediction[1])
+    cv2.circle(frame, (predicted_x, predicted_y), 5, (0, 255, 0), -1)
+
+    # Vẽ vị trí hiện tại của đối tượng
+    cv2.circle(frame, (object_position[0], object_position[1]), 5, (0, 0, 255), -1)
+
+    # Hiển thị khung hình kết quả
+    cv2.imshow('Tracking', frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Giải phóng bộ nhớ và đóng video
+cap.release()
+cv2.destroyAllWindows()
