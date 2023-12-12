@@ -42,8 +42,8 @@ def calculate_distance(point_c, point_b):
 model = YOLO('yolov8n.pt')
 # model = YOLO('crowdhuman_yolov5m.pt')
 
-cap = cv2.VideoCapture(0)
-ip = "http://192.168.1.10:5000"
+# cap = cv2.VideoCapture(0)
+ip = "http://192.168.1.3:5000"
 url_img = ip+"/data_img"
 
 url_control = ip+"/data_control"
@@ -67,10 +67,11 @@ direction = 0
 
 while True:
     # read frame
-    ret, frame = cap.read()
-    # response2 = requests.get(url_img)
-    # image_array = np.asarray(bytearray(response2.content), dtype=np.uint8)
-    # frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    # ret, frame = cap.read()
+
+    response2 = requests.get(url_img)
+    image_array = np.asarray(bytearray(response2.content), dtype=np.uint8)
+    frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
     #caculation time ======================
     current_time = time.time()
@@ -255,24 +256,30 @@ while True:
             point_c = (x+w/2, y+h/2)
             point_c = [round(x) for x in point_c]
             cv2.circle(frame_, point_c, 4, (0,255,0), 2)
+            cv2.putText(frame_, str(point_c), point_c, cv2.FONT_HERSHEY_COMPLEX,1,(0,0,255), 2)
             
-            print("====>  POINT_CENTER_KL: ", point_c)           
+            # print("====>  POINT_CENTER_KL: ", point_c)            
             print(x,y,w,h)
 
             s  = w * h
 
-            if (280 <= point_c[0] <= 360) and (280 <= point_c[1] <= 360) :
+            if (x < 200) and (y < 170) and (280 <= point_c[0] <= 360) and (point_c[1] < 320) :
+                print("====>  STOP")
+            elif (x < 200) and (y < 170) and (point_c[0] <= 280) and (point_c[1] < 320) :
+                print("====>  RIGHT")
+            elif (280 <= point_c[0] <= 360) and (280 <= point_c[1] <= 360) :
                 direction = 1
-                print("======> STOP")
+                print("======> FORWARD")    
             # else:
             #     print("====> right")
                 
-            elif (point_c[0] < 280):
+            elif (point_c[0] < 280) and (280 <= point_c[1] <= 360):
                 direction = 2
                 print("======> RIGHT")
-            elif (point_c[0] > 360):
+            elif (point_c[0] > 360) and (280 <= point_c[1] <= 360):
                 direction = 3
                 print("======> LEFT")
+            
             # else:
             #     direction = 1111
     frame_ = cv2.putText(frame_, text_time, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
@@ -284,5 +291,5 @@ while True:
     if cv2.waitKey(1)  & 0xFF == ord("q"):
         break
     
-cap.release()
+# cap.release()
 cv2.destroyAllWindows()
