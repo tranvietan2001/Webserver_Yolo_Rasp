@@ -31,8 +31,6 @@ class KalmanFilter:
         P = np.dot(np.eye(self.H.shape[0]) - np.dot(K, self.H), P)
         return x, P
 
-
-
 #c: center, b box
 def calculate_distance(point_c, point_b):
     distance = math.sqrt((point_b[0] - point_c[0])**2 + (point_b[1] - point_c[1])**2)
@@ -43,11 +41,10 @@ model = YOLO('yolov8n.pt')
 # model = YOLO('crowdhuman_yolov5m.pt')
 
 # cap = cv2.VideoCapture(0)
-ip = "http://192.168.1.3:5000"
+ip = "http://192.168.16.117:5000"
 url_img = ip+"/data_img"
-
 url_control = ip+"/data_control"
-data_post = {'speed': '50', 'control': '16546,342'}
+
 # print(tracker)
 
 dt = 2.0  # Khoảng thời gian giữa các lần đo
@@ -64,6 +61,7 @@ list_box = []
 list_id = []
 
 direction = 0
+error_detect= 0
 
 while True:
     # read frame
@@ -86,9 +84,9 @@ while True:
     center_def_y = int(480/2)
     point_center = (center_def_x, center_def_y)  
     box_x_tl = 220
-    box_y_tl = 70
+    box_y_tl = 0
     box_x_br = 420
-    box_y_br = 410
+    box_y_br = 480
     point_topleft = (box_x_tl, box_y_tl)
     point_bottomright = (box_x_br, box_y_br)
     frame = cv2.circle(frame, point_center, 2, (0,255,255), 5)
@@ -109,14 +107,6 @@ while True:
     
     # result detect in one frame
     result = results[0]
-
-    
-    # print("=====> bbox: ", len(result.boxes)) #so luong bb
-    
-    #Co so luong box->duyet lan luot qua cac box
-    #->tinh diem center box detect
-    #->
-
 
     if int(elapsed_time) < 15:
         list_box.clear()
@@ -165,6 +155,7 @@ while True:
 
                 else:
                     print("=======> Not detect")
+                    error_detect = 1
 
                 print("=======================================================")
         
@@ -233,6 +224,7 @@ while True:
                     # frame_ = cv2.line(frame_, (0,320), (640,320), (255,255,255), 2)
                 else:
                     print("ID bị thay doi => canh bao, tnay doi sang doi tuong id gan nhat")
+
             else:
                 print("=======> Not detect")
         
@@ -261,27 +253,36 @@ while True:
             # print("====>  POINT_CENTER_KL: ", point_c)            
             print(x,y,w,h)
 
-            s  = w * h
-
-            if (x < 200) and (y < 170) and (280 <= point_c[0] <= 360) and (point_c[1] < 320) :
-                print("====>  STOP")
-            elif (x < 200) and (y < 170) and (point_c[0] <= 280) and (point_c[1] < 320) :
-                print("====>  RIGHT")
-            elif (280 <= point_c[0] <= 360) and (280 <= point_c[1] <= 360) :
-                direction = 1
-                print("======> FORWARD")    
-            # else:
-            #     print("====> right")
-                
-            elif (point_c[0] < 280) and (280 <= point_c[1] <= 360):
+            if ((x < 220) or ((x + w) > 420)) and (y < 85) and (220 <= point_c[0] <= 420):
+                print("=====> STOP.")
+                direction = 0
+            elif(x < 220) and (y < 160) and (point_c[0] < 220):
+                print("=====> RIGHT.")
                 direction = 2
-                print("======> RIGHT")
-            elif (point_c[0] > 360) and (280 <= point_c[1] <= 360):
+            elif ((x + w) > 420) and (y < 85) and (point_c[0] > 420):
+                print("=====> LEFT.")
                 direction = 3
-                print("======> LEFT")
-            
-            # else:
-            #     direction = 1111
+            elif (x >= 220 and (x + w) <= 420 and y < 85 and point_c[1] < 320):
+                print("=====> STOP")
+                direction = 0
+            elif ((x < 220) or ((x + w) > 420)) and (y >= 85) and (220 <= point_c[0] <= 420):
+                print("=====> FORWARD")
+                direction = 1
+            elif(x < 220) and (y >= 85) and (point_c[0] < 220):
+                print("=====> FORWARD_RIGHT.")
+                direction = 5
+            elif ((x + w) > 420) and (y >= 85) and (point_c[0] > 420):
+                print("=====> FORWARD_LEFT.")
+                direction = 4
+            elif (x >= 220 and (x + w) <= 420 and (y > 160)):
+                print("=====> FORWARD.")
+                direction = 1
+        data = {'speed': str(direction)}
+        response = requests.post(url_control, data=data)   
+        if response.status_code == 200:
+            print('Dữ liệu đã được gửi thành công!')
+        else:
+            print('Có lỗi xảy ra khi gửi dữ liệu.')     
     frame_ = cv2.putText(frame_, text_time, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
 
     #visualize
