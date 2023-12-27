@@ -70,6 +70,7 @@ while True:
     response2 = requests.get(url_img)
     image_array = np.asarray(bytearray(response2.content), dtype=np.uint8)
     frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    # frame = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
 
     #caculation time ======================
     current_time = time.time()
